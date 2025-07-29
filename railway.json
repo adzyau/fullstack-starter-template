@@ -1,0 +1,19 @@
+{
+    "deployments": {
+      "services": {
+        "frontend": {
+          "rootDirectory": "apps/frontend",
+          "buildCommand": "npm install && npm run build",
+          "startCommand": "npm start",
+          "dockerfilePath": "apps/frontend/Dockerfile"
+        },
+        "backend": {
+          "rootDirectory": "apps/backend",
+          "buildCommand": "npm install && npx prisma generate",
+          "startCommand": "npm run start",
+          "dockerfilePath": "apps/backend/Dockerfile"
+        }
+      }
+    }
+  }
+  
