@@ -1,27 +1,54 @@
-name: Deploy to VPS
+name: Docker CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  deploy:
+  build-and-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: devdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          ssh-private-key: ${{ secrets.VPS_KEY }}
+          node-version: 18
 
-      - name: Deploy to VPS
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd /var/www/fullstack-ide
-            git pull origin main
-            docker compose -f docker/docker-compose.yml up -d --build
-          EOF
+      - name: Install dependencies (frontend)
+        working-directory: apps/frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: apps/frontend
+        run: npm run build
+
+      - name: Install dependencies (backend)
+        working-directory: apps/backend
+        run: npm install
+
+      - name: Prisma generate
+        working-directory: apps/backend
+        run: npx prisma generate
+
+      - name: Run backend tests (optional)
+        working-directory: apps/backend
+        run: echo "Add your tests here"
+
